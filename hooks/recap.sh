@@ -60,7 +60,17 @@ len=$(printf '%s' "$input" | jq -r '.last_assistant_message // "" | length' 2>/d
 case "$len" in
   '' | *[!0-9]* ) exit 0 ;;
 esac
-[ "$len" -le "$threshold" ] && exit 0
+# Record every evaluation, fired or not, so the threshold can be tuned against
+# real usage instead of guesswork. Length and threshold only — the message text
+# is never written anywhere. Kept outside the state dir so the 7-day prune of
+# per-session files cannot delete the history.
+fired=0
+[ "$len" -gt "$threshold" ] && fired=1
+printf '%s\t%s\t%s\t%s\t%s\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" "$sid" "$len" "$threshold" "$fired" \
+  >> "${HOME}/.claude/baton-opus5.log" 2>/dev/null || true
+
+[ "$fired" = 1 ] || exit 0
 
 # Force one more turn. Built with jq -n so the output is valid JSON by
 # construction. The reason text is fixed and carries no input.

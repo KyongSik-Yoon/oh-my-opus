@@ -55,6 +55,24 @@ Opus 5's median turn is 3.7x longer than Fable's, which is the verbosity complai
 
 **Subagent cap, 10.** Across the same 114 turns the maximum spawned in a single turn was **3**, and 62% of turns spawned none. A cap of 5 would not have bound either. This cap is insurance against a fan-out that has not yet been observed here, not a fix for a measured problem — treat 10 as a ceiling that should never fire, and lower it only if you see a runaway.
 
+**Tuning it yourself.** Every time the recap hook evaluates a turn it appends one line to `~/.claude/baton-opus5.log`:
+
+```
+2026-08-18T22:54:10Z	<session id>	1500	1200	1
+```
+
+Timestamp, session id, message length, threshold in force, and whether it fired. **The message text is never written** — only its length. Turns that were skipped before measurement (a non-Opus-5 session, or the second half of a recap pair) are not logged, so the file is exactly the population the threshold applies to.
+
+After a week of real use, that file answers whether 1200 is right for you:
+
+```sh
+awk -F'\t' '{n++; s+=$5; if($3>m) m=$3; a[n]=$3}
+  END{asort(a); printf "turns %d  fired %d (%.0f%%)  median %d  p90 %d  max %d\n",
+      n, s, 100*s/n, a[int(n*0.5)], a[int(n*0.9)], m}' ~/.claude/baton-opus5.log
+```
+
+If it almost never fires, your own output style or system prompt is already doing the work and you can set `recap=off` — the hook is not earning its extra call. If it fires on most turns, lower the threshold or fix the upstream instruction instead of paying for a recap every turn. The recap is a backstop for a standing instruction that decays; its firing rate is the measurement of that decay.
+
 ## Why this exists
 
 Heavy orchestration harnesses can fight a capable model as much as they help it. baton-opus5 is the experiment in the other direction: give the session cheap tools and a hard budget at the edges, then get out of its way. It is a sibling of https://github.com/KyongSik-Yoon/baton, which takes the opposite approach on purpose.
