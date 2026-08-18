@@ -1,5 +1,5 @@
 {
-  "description": "baton-opus5: bound an Opus 5 session at its edges — a per-turn subagent cap, per-turn counter reset, and an end-of-turn recap when a turn ends long — without steering how the session works. Missing flag file leaves the plugin inert.",
+  "description": "oh-my-opus: bound an Opus 5 session at its edges — a per-turn subagent cap, per-turn counter reset, and an end-of-turn recap when a turn ends long — without steering how the session works. Missing flag file leaves the plugin inert.",
   "hooks": {
     "UserPromptSubmit": [
       {

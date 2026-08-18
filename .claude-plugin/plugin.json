@@ -1,5 +1,5 @@
 {
-  "name": "baton-opus5",
+  "name": "oh-my-opus",
   "description": "Bound an Opus 5 session at its edges without steering how it works: a per-turn subagent cap and an optional end-of-turn recap constrain the boundary, while cheap workers (Haiku scout, Sonnet coder, fresh-context Opus 5 reviewer) stay available by choice and never required. The deliberate inverse of baton — constrain the boundary, never the interior.",
   "version": "0.1.0",
   "author": {

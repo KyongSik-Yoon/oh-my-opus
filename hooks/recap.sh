@@ -1,11 +1,11 @@
 #!/bin/sh
-# baton-opus5 end-of-turn recap: Stop hook on the MAIN session only (subagent
+# oh-my-opus end-of-turn recap: Stop hook on the MAIN session only (subagent
 # turns use SubagentStop, which this plugin does not register). When the ending
 # assistant message runs long in an Opus 5 session, force exactly one more turn
 # asking for a short recap. Fails quiet everywhere: a missing flag, disabled
 # recap, missing jq, unknown model, or short message prints nothing and exits 0.
 # The extra turn can never loop — it blocks only when stop_hook_active is falsy.
-FLAG="${HOME}/.claude/baton-opus5"
+FLAG="${HOME}/.claude/oh-my-opus"
 [ -f "$FLAG" ] || exit 0
 
 command -v jq >/dev/null 2>&1 || exit 0
@@ -41,17 +41,17 @@ esac
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # `.` is a POSIX special builtin: a failed source aborts the shell before any
-# fallback runs, so pre-check readability. If the lib is gone, baton_is_opus5 is
+# fallback runs, so pre-check readability. If the lib is gone, omo_is_opus5 is
 # undefined and the model check below fails closed (do nothing) — the safe
 # direction here is to never spend an extra call on a session we cannot identify.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
-STATE="${HOME}/.claude/baton-opus5-state"
+STATE="${HOME}/.claude/oh-my-opus-state"
 mf="${STATE}/${sid}.model"
 [ -s "$mf" ] || exit 0
 model=$(cat "$mf" 2>/dev/null)
 [ -n "$model" ] || exit 0
-baton_is_opus5 "$model" 2>/dev/null || exit 0
+omo_is_opus5 "$model" 2>/dev/null || exit 0
 
 # Measure the ending message. jq's `length` on a string counts codepoints, not
 # bytes — correct for non-ASCII text. last_assistant_message is ONLY measured
@@ -68,7 +68,7 @@ fired=0
 [ "$len" -gt "$threshold" ] && fired=1
 printf '%s\t%s\t%s\t%s\t%s\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" "$sid" "$len" "$threshold" "$fired" \
-  >> "${HOME}/.claude/baton-opus5.log" 2>/dev/null || true
+  >> "${HOME}/.claude/oh-my-opus.log" 2>/dev/null || true
 
 [ "$fired" = 1 ] || exit 0
 

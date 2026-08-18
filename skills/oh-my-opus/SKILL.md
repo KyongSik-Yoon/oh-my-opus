@@ -1,7 +1,7 @@
 ---
-name: baton-opus5
+name: oh-my-opus
 argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] | off | maxagents auto|0-99 | recap on|off|<chars> | status]"
-description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an optional end-of-turn recap, cheap workers it may call by choice, and a fresh-context reviewer for high-consequence changes. Invoke only when the user runs /baton-opus5 or asks about the mode; never implicitly.
+description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an optional end-of-turn recap, cheap workers it may call by choice, and a fresh-context reviewer for high-consequence changes. Invoke only when the user runs /oh-my-opus or asks about the mode; never implicitly.
 ---
 
 Opus 5 decides how to work. This plugin does not tell it. The rule is: **constrain the boundary, never the interior.** A boundary is a budget or a check at an edge — the subagent cap and the optional recap. The interior is how the turn actually runs: mandated process, forced delegation, per-turn posture injection, step-by-step instructions. This plugin ships boundaries and refuses to ship interior controls.
@@ -17,8 +17,8 @@ Two mechanisms: a per-turn **cap** on how many subagents the main agent may spaw
 Handle the argument first, confirm in one line, then stop.
 
 - `on [maxagents=<v>] [recap=<v>]` — write the flag file, defaults `maxagents=auto`, `recap=on`:
-  `printf 'maxagents=<m>\nrecap=<r>\n' > ~/.claude/baton-opus5`
-- `off` — `rm -f ~/.claude/baton-opus5` (plugin goes inert).
+  `printf 'maxagents=<m>\nrecap=<r>\n' > ~/.claude/oh-my-opus`
+- `off` — `rm -f ~/.claude/oh-my-opus` (plugin goes inert).
 - `maxagents auto|0-99` — rewrite only that line, keep the current `recap`.
 - `recap on|off|<chars>` — rewrite only that line, keep the current `maxagents`.
 - `status` — report both current values.

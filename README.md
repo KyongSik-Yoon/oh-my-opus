@@ -1,15 +1,15 @@
-# baton-opus5
+# oh-my-opus
 
 Bound an Opus 5 session at its edges without steering how it works.
 
 ## Premise
 
-baton-opus5 is the deliberate inverse of [baton](https://github.com/KyongSik-Yoon/baton). baton runs the session as a hook-enforced pure orchestrator: it blocks the main agent's edits and forces delegation. This plugin does the opposite. It constrains **the boundary, never the interior.**
+oh-my-opus is the deliberate inverse of [baton](https://github.com/KyongSik-Yoon/baton). baton runs the session as a hook-enforced pure orchestrator: it blocks the main agent's edits and forces delegation. This plugin does the opposite. It constrains **the boundary, never the interior.**
 
 - A **boundary** is a budget or a check at an edge: the per-turn subagent cap, an optional end-of-turn recap, and a fresh-context review you may ask for. These are the only things this plugin enforces.
-- The **interior** is how a turn actually runs: mandated process, forced delegation, per-turn posture injection, step-by-step instructions. baton ships these on purpose. baton-opus5 refuses to — Opus 5 decides how to work.
+- The **interior** is how a turn actually runs: mandated process, forced delegation, per-turn posture injection, step-by-step instructions. baton ships these on purpose. oh-my-opus refuses to — Opus 5 decides how to work.
 
-If baton is a harness, baton-opus5 is a guardrail on the edge of the road. They are siblings that take opposite approaches; pick the one that matches how much you want to steer.
+If baton is a harness, oh-my-opus is a guardrail on the edge of the road. They are siblings that take opposite approaches; pick the one that matches how much you want to steer.
 
 ## What ships
 
@@ -26,11 +26,11 @@ Two mechanisms:
 
 ## Install
 
-Add this directory as a marketplace plugin in Claude Code, then enable `baton-opus5`. The plugin is **inert until you turn it on** — no flag file means no cap, no recap, nothing written.
+Add this directory as a marketplace plugin in Claude Code, then enable `oh-my-opus`. The plugin is **inert until you turn it on** — no flag file means no cap, no recap, nothing written.
 
 ## Usage
 
-Run `/baton-opus5`:
+Run `/oh-my-opus`:
 
 - `on [maxagents=auto|0-99] [recap=on|off|<chars>]` — turn on (defaults `maxagents=auto`, `recap=on`).
 - `off` — turn off; the plugin goes inert.
@@ -38,7 +38,7 @@ Run `/baton-opus5`:
 - `recap on|off|<chars>` — change the recap setting, keep the cap.
 - `status` — report both current values.
 
-State lives in `~/.claude/baton-opus5` (flag file) and `~/.claude/baton-opus5-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start. Headless `claude -p` runs carry no `model` field at `SessionStart` — only interactive sessions do — so in headless mode the plugin stays inert by design rather than guessing.
+State lives in `~/.claude/oh-my-opus` (flag file) and `~/.claude/oh-my-opus-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start. Headless `claude -p` runs carry no `model` field at `SessionStart` — only interactive sessions do — so in headless mode the plugin stays inert by design rather than guessing.
 
 ## Where the numbers come from
 
@@ -55,7 +55,7 @@ Opus 5's median turn is 3.7x longer than Fable's, which is the verbosity complai
 
 **Subagent cap, 10.** Across the same 114 turns the maximum spawned in a single turn was **3**, and 62% of turns spawned none. A cap of 5 would not have bound either. This cap is insurance against a fan-out that has not yet been observed here, not a fix for a measured problem — treat 10 as a ceiling that should never fire, and lower it only if you see a runaway.
 
-**Tuning it yourself.** Every time the recap hook evaluates a turn it appends one line to `~/.claude/baton-opus5.log`:
+**Tuning it yourself.** Every time the recap hook evaluates a turn it appends one line to `~/.claude/oh-my-opus.log`:
 
 ```
 2026-08-18T22:54:10Z	<session id>	1500	1200	1
@@ -68,14 +68,14 @@ After a week of real use, that file answers whether 1200 is right for you:
 ```sh
 awk -F'\t' '{n++; s+=$5; if($3>m) m=$3; a[n]=$3}
   END{asort(a); printf "turns %d  fired %d (%.0f%%)  median %d  p90 %d  max %d\n",
-      n, s, 100*s/n, a[int(n*0.5)], a[int(n*0.9)], m}' ~/.claude/baton-opus5.log
+      n, s, 100*s/n, a[int(n*0.5)], a[int(n*0.9)], m}' ~/.claude/oh-my-opus.log
 ```
 
 If it almost never fires, your own output style or system prompt is already doing the work and you can set `recap=off` — the hook is not earning its extra call. If it fires on most turns, lower the threshold or fix the upstream instruction instead of paying for a recap every turn. The recap is a backstop for a standing instruction that decays; its firing rate is the measurement of that decay.
 
 ## Why this exists
 
-Heavy orchestration harnesses can fight a capable model as much as they help it. baton-opus5 is the experiment in the other direction: give the session cheap tools and a hard budget at the edges, then get out of its way. It is a sibling of https://github.com/KyongSik-Yoon/baton, which takes the opposite approach on purpose.
+Heavy orchestration harnesses can fight a capable model as much as they help it. oh-my-opus is the experiment in the other direction: give the session cheap tools and a hard budget at the edges, then get out of its way. It is a sibling of https://github.com/KyongSik-Yoon/baton, which takes the opposite approach on purpose.
 
 ## License
 

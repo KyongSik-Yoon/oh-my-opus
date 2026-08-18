@@ -1,10 +1,10 @@
 #!/bin/sh
-# baton-opus5 agent cap: PreToolUse hook on Task|Agent. While the flag file
+# oh-my-opus agent cap: PreToolUse hook on Task|Agent. While the flag file
 # exists, cap how many subagents the MAIN agent may spawn in a single turn. Only
 # the main agent is capped (subagent spawns carry agent_id). The counter is reset
 # per turn by turn-reset.sh on UserPromptSubmit. Fails OPEN everywhere: a missing
 # flag, missing state, or bad session id never blocks a spawn.
-FLAG="${HOME}/.claude/baton-opus5"
+FLAG="${HOME}/.claude/oh-my-opus"
 [ -f "$FLAG" ] || exit 0
 
 input=$(cat)
@@ -26,14 +26,14 @@ esac
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # `.` is a POSIX special builtin: a failed source aborts the shell before any
-# fallback runs, so pre-check readability. If the lib is gone, baton_effective_cap
+# fallback runs, so pre-check readability. If the lib is gone, omo_effective_cap
 # is undefined below and the [ -n "$cap" ] guard fails OPEN (allow) — safe.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
-cap=$(baton_effective_cap "$sid" 2>/dev/null)
+cap=$(omo_effective_cap "$sid" 2>/dev/null)
 [ -n "$cap" ] || exit 0
 
-STATE="${HOME}/.claude/baton-opus5-state"
+STATE="${HOME}/.claude/oh-my-opus-state"
 slotdir="${STATE}/${sid}.agents"
 
 # Atomic per-turn slot claim. mkdir is atomic on POSIX: for any given slot dir
@@ -54,5 +54,5 @@ while [ "$i" -le "$cap" ]; do
 done
 
 # Every slot is taken. Do NOT claim anything when denying.
-printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"baton-opus5: this turn already spawned %s subagents (maxagents cap). Finish with what you already have, or stop and report to the user — they can raise it with /baton-opus5 maxagents <n>."}}\n' "$cap"
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"oh-my-opus: this turn already spawned %s subagents (maxagents cap). Finish with what you already have, or stop and report to the user — they can raise it with /oh-my-opus maxagents <n>."}}\n' "$cap"
 exit 0
