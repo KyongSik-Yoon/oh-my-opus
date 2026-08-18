@@ -38,7 +38,22 @@ Run `/baton-opus5`:
 - `recap on|off|<chars>` — change the recap setting, keep the cap.
 - `status` — report both current values.
 
-State lives in `~/.claude/baton-opus5` (flag file) and `~/.claude/baton-opus5-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start.
+State lives in `~/.claude/baton-opus5` (flag file) and `~/.claude/baton-opus5-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start. Headless `claude -p` runs carry no `model` field at `SessionStart` — only interactive sessions do — so in headless mode the plugin stays inert by design rather than guessing.
+
+## Where the numbers come from
+
+Both defaults were measured against 55 real transcripts (114 user turns) rather than chosen by feel.
+
+**Recap threshold, 1200 characters.** The final message of a turn, by session model:
+
+| model | turns | median | p90 | over 1200 |
+| --- | --- | --- | --- | --- |
+| `claude-opus-5` | 34 | 700 | 1601 | 23.5% |
+| `claude-fable-5` | 61 | 187 | 1245 | 11.5% |
+
+Opus 5's median turn is 3.7x longer than Fable's, which is the verbosity complaint in numbers. 1200 sits near the Opus 5 p76, so the recap fires on roughly the top quartile of turns — where scanning actually breaks down — and costs an extra call about one turn in four. Note what it does and does not do: the recap is appended, not substituted, so it buys scannability, not fewer tokens.
+
+**Subagent cap, 10.** Across the same 114 turns the maximum spawned in a single turn was **3**, and 62% of turns spawned none. A cap of 5 would not have bound either. This cap is insurance against a fan-out that has not yet been observed here, not a fix for a measured problem — treat 10 as a ceiling that should never fire, and lower it only if you see a runaway.
 
 ## Why this exists
 

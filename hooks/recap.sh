@@ -66,6 +66,6 @@ esac
 # construction. The reason text is fixed and carries no input.
 jq -n '{
   decision: "block",
-  reason: "Your last message ran long. Reply with a recap and nothing else: what changed, what it means for the user, and anything they must decide. Do not restate detail already above, do not add a preamble, and put the most important line last. If your last message ended with a question or asked the user to choose, keep that question as the final line."
+  reason: "Your last message ran long. Reply with a recap and nothing else: the essential point, anything the user must decide, and — only if you changed something — what changed. No preamble, no restating detail from above, most important line last. If your last message ended with a question or asked the user to choose, keep that question as the final line."
 }'
 exit 0

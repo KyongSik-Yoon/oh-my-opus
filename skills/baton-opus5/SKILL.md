@@ -25,7 +25,7 @@ Handle the argument first, confirm in one line, then stop.
 
 ## Cap semantics
 
-`auto` means a cap of 10 under an Opus 5 session and unlimited otherwise. `0` is unlimited. `1`-`99` is a hard cap regardless of model. The per-turn counter resets on every user prompt. The session model is recorded at `SessionStart`, because later hook payloads do not carry a model field — that is why the cap knows whether the session is Opus 5.
+`auto` means a cap of 10 under an Opus 5 session and unlimited otherwise. `0` is unlimited. `1`-`99` is a hard cap regardless of model. The per-turn counter resets on every user prompt. The session model is recorded at `SessionStart`, because later hook payloads do not carry a model field — that is why the cap knows whether the session is Opus 5. Only interactive sessions carry it; a headless `claude -p` run leaves the plugin inert.
 
 ## Recap semantics
 
