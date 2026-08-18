@@ -22,7 +22,7 @@ Three workers, all **available by choice and never required**:
 Two mechanisms:
 
 - **Subagent cap** — a per-turn limit on how many subagents the main agent may spawn. `auto` is 10 under an Opus 5 session and unlimited otherwise; `0` is unlimited; `1`-`99` is a hard cap. The counter resets on every user prompt.
-- **Recap** — an optional short recap when a turn ends long, at the cost of one extra model call on those turns. *(The recap hook is not implemented yet; setting `recap` records your preference for when it lands.)*
+- **Recap** — an optional short recap when a turn ends long, at the cost of one extra model call on those turns. It fires only in an Opus 5 session and only when the ending message exceeds the threshold. `on` (the default) uses 1200 characters; `off` disables it; an integer `1`-`99999` sets a custom threshold. The threshold counts characters, not bytes.
 
 ## Install
 
@@ -32,13 +32,13 @@ Add this directory as a marketplace plugin in Claude Code, then enable `baton-op
 
 Run `/baton-opus5`:
 
-- `on [maxagents=auto|0-99] [recap=on|off]` — turn on (defaults `maxagents=auto`, `recap=on`).
+- `on [maxagents=auto|0-99] [recap=on|off|<chars>]` — turn on (defaults `maxagents=auto`, `recap=on`).
 - `off` — turn off; the plugin goes inert.
 - `maxagents auto|0-99` — change the cap, keep the recap setting.
-- `recap on|off` — change the recap setting, keep the cap.
+- `recap on|off|<chars>` — change the recap setting, keep the cap.
 - `status` — report both current values.
 
-State lives in `~/.claude/baton-opus5` (flag file) and `~/.claude/baton-opus5-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days).
+State lives in `~/.claude/baton-opus5` (flag file) and `~/.claude/baton-opus5-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start.
 
 ## Why this exists
 
