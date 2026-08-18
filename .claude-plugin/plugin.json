@@ -5,6 +5,15 @@
   "author": {
     "name": "KyongSik Yoon"
   },
+  "homepage": "https://github.com/KyongSik-Yoon/oh-my-opus",
+  "repository": "https://github.com/KyongSik-Yoon/oh-my-opus",
   "license": "MIT",
-  "keywords": ["claude", "opus-5", "subagents", "budget", "hooks", "skill"]
+  "keywords": [
+    "claude",
+    "opus-5",
+    "subagents",
+    "budget",
+    "hooks",
+    "skill"
+  ]
 }

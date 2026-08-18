@@ -26,7 +26,12 @@ Two mechanisms:
 
 ## Install
 
-Add this directory as a marketplace plugin in Claude Code, then enable `oh-my-opus`. The plugin is **inert until you turn it on** — no flag file means no cap, no recap, nothing written.
+```
+/plugin marketplace add KyongSik-Yoon/oh-my-opus
+/plugin install oh-my-opus@oh-my-opus
+```
+
+Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert until you turn it on** — no flag file means no cap, no recap, nothing written. It also needs an interactive session, and it only ever acts under Opus 5.
 
 ## Usage
 

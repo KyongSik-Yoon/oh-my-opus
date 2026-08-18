@@ -1,5 +1,6 @@
 {
   "name": "oh-my-opus",
+  "description": "Guardrails for an Opus 5 session that bound its edges without steering how it works.",
   "owner": {
     "name": "KyongSik Yoon",
     "url": "https://github.com/KyongSik-Yoon"
