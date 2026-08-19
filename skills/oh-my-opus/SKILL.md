@@ -10,9 +10,9 @@ The overlay is the one deliberate exception, and it is an exception on purpose. 
 
 ## What ships
 
-Four workers, all available and never required: `scout` (Haiku, read-only recon), `coder` (Sonnet 5, implements a handed stage), `reviewer` (Opus 5, fresh-context adversarial review of a final diff), `advisor` (Fable 5, one independent judgment on a question). The session calls them if and when it judges they help.
+Four workers, all available and never required: `scout` (Haiku, read-only recon), `coder` (Sonnet 5, implements a handed stage), `reviewer` (Opus 4.8, fresh-context adversarial review of a final diff), `advisor` (Fable 5, one independent judgment on a question). The session calls them if and when it judges they help.
 
-The advisor is a different model with a fresh context where the reviewer is the same model with a fresh context. It has no trigger and this plugin never mandates one — a second opinion is cheap before a direction is committed to and expensive after, and the session is the thing that knows which it is looking at.
+The advisor is a different model family with a fresh context where the reviewer is a prior Opus generation with a fresh context — neither one wrote the change, and they miss different things. It has no trigger and this plugin never mandates one — a second opinion is cheap before a direction is committed to and expensive after, and the session is the thing that knows which it is looking at.
 
 Three mechanisms: a per-turn **cap** on subagent spawns, an end-of-turn **recap** when a turn runs long, and the harness **overlay**.
 

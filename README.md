@@ -19,8 +19,8 @@ Four workers, all **available by choice and never required**:
 
 - `scout` — Haiku, read-only recon. Cheap file discovery and evidence gathering instead of the expensive built-in Explore.
 - `coder` — Sonnet 5, implements a handed stage against clear acceptance criteria.
-- `reviewer` — Opus 5, read-only adversarial review of a final diff. Pinned to the session's own model on purpose: the value is a fresh context that did not produce the change, not a stronger model.
-- `advisor` — Fable 5, one independent judgment on a question. Where the reviewer is the same model with a fresh context, the advisor is a *different* model with a fresh context, so the two miss different things.
+- `reviewer` — Opus 4.8, read-only adversarial review of a final diff. Pinned one generation back on purpose: the value is a fresh context that did not produce the change, on a model that did not write it and will not defer to it — not a stronger model.
+- `advisor` — Fable 5, one independent judgment on a question. Where the reviewer is a prior Opus with a fresh context, the advisor is a *different model family* with a fresh context, so the two miss different things.
 
 The advisor has **no trigger**. Nothing in this plugin decides when to consult it, on purpose: a mandatory escalation gate is an interior control, and a second voice arriving after a direction is already chosen is a good way to manufacture the churn this plugin exists to avoid. The cheap moment for a second opinion is *before* you commit — a design you are about to build on, a decision you have already reversed once, evidence that will not reconcile. The session judges that moment itself, as it does with the other three.
 
