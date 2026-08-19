@@ -1,27 +1,28 @@
 ---
 name: oh-my-opus
-argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] | off | maxagents auto|0-99 | recap on|off|<chars> | status]"
-description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an optional end-of-turn recap, cheap workers it may call by choice, and a fresh-context reviewer for high-consequence changes. Invoke only when the user runs /oh-my-opus or asks about the mode; never implicitly.
+argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off] | off | maxagents auto|0-99 | recap on|off|<chars> | overlay on|off | status]"
+description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an end-of-turn recap, cheap workers it may call by choice, a fresh-context reviewer, and an opt-in overlay that demotes a project's legacy method instructions to advice. Invoke only when the user runs /oh-my-opus or asks about the mode; never implicitly.
 ---
 
-Opus 5 decides how to work. This plugin does not tell it. The rule is: **constrain the boundary, never the interior.** A boundary is a budget or a check at an edge — the subagent cap and the optional recap. The interior is how the turn actually runs: mandated process, forced delegation, per-turn posture injection, step-by-step instructions. This plugin ships boundaries and refuses to ship interior controls.
+Opus 5 decides how to work. This plugin does not tell it. The rule is: **constrain the boundary, never the interior.** A boundary is a budget or a check at an edge — the subagent cap and the recap. The interior is how a turn actually runs: mandated process, forced delegation, step-by-step ritual.
+
+The overlay is the one deliberate exception, and it is an exception on purpose. It is a per-turn injection, which is an interior control — but it exists only to offset interior controls a project already imposes, and it stays silent unless that project opts in.
 
 ## What ships
 
 Three workers, all available and never required: `scout` (Haiku, read-only recon), `coder` (Sonnet 5, implements a handed stage), `reviewer` (Opus 5, fresh-context adversarial review of a final diff). The session calls them if and when it judges they help.
 
-Two mechanisms: a per-turn **cap** on how many subagents the main agent may spawn, and an optional end-of-turn **recap** (asks for a short recap when a turn ends long; costs one extra model call on those turns).
+Three mechanisms: a per-turn **cap** on subagent spawns, an end-of-turn **recap** when a turn runs long, and the harness **overlay**.
 
 ## Commands
 
 Handle the argument first, confirm in one line, then stop.
 
-- `on [maxagents=<v>] [recap=<v>]` — write the flag file, defaults `maxagents=auto`, `recap=on`:
-  `printf 'maxagents=<m>\nrecap=<r>\n' > ~/.claude/oh-my-opus`
+- `on [maxagents=<v>] [recap=<v>] [overlay=<v>]` — write the flag file, defaults `maxagents=auto`, `recap=on`, `overlay=on`:
+  `printf 'maxagents=<m>\nrecap=<r>\noverlay=<o>\n' > ~/.claude/oh-my-opus`
 - `off` — `rm -f ~/.claude/oh-my-opus` (plugin goes inert).
-- `maxagents auto|0-99` — rewrite only that line, keep the current `recap`.
-- `recap on|off|<chars>` — rewrite only that line, keep the current `maxagents`.
-- `status` — report both current values.
+- `maxagents auto|0-99` / `recap on|off|<chars>` / `overlay on|off` — rewrite only that line, keep the others.
+- `status` — report all three values, and whether the current project carries the overlay marker.
 
 ## Cap semantics
 
@@ -29,6 +30,12 @@ Handle the argument first, confirm in one line, then stop.
 
 ## Recap semantics
 
-`recap=on` (the default) fires the recap when the ending message exceeds **1200 characters**; `off` disables it; an integer `1`-`99999` sets a custom threshold. The threshold counts characters (codepoints), not bytes. The recap fires only in an Opus 5 session and only when the ending message exceeds the threshold, costing one extra model call on those turns.
+`recap=on` (the default) fires when the ending message exceeds **1200 characters**; `off` disables it; an integer `1`-`99999` sets a custom threshold. It counts characters (codepoints), not bytes, and costs one extra model call on the turns it fires.
 
-Missing flag file means the plugin is inert: no cap, no recap, nothing written.
+## Overlay semantics
+
+Project harnesses were mostly written for models that needed the scaffolding. The overlay tells an Opus 5 session to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist: **method** becomes advisory (step order, mandatory delegation, review rituals, format conventions) while **substance** still binds (paths not to touch, commands to run before finishing, acceptance criteria, security and compliance). Tool permissions and hook decisions are never advisory and this plugin does not touch them. When the session sets a rule aside deliberately it says so in one line, so the departure stays visible.
+
+Three gates all have to pass, so it is quiet by default: the session model is Opus 5, the flag does not say `overlay=off`, and **the project opted in** by creating a marker file `.claude/oh-my-opus` in the repo (any parent directory of the session cwd counts). Without that marker nothing is injected — which is what keeps the plugin from silently rewriting the rules of a repository that never asked.
+
+Missing flag file means the plugin is inert: no cap, no recap, no overlay, nothing written.

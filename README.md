@@ -7,7 +7,9 @@ Bound an Opus 5 session at its edges without steering how it works.
 oh-my-opus is the deliberate inverse of [baton](https://github.com/KyongSik-Yoon/baton). baton runs the session as a hook-enforced pure orchestrator: it blocks the main agent's edits and forces delegation. This plugin does the opposite. It constrains **the boundary, never the interior.**
 
 - A **boundary** is a budget or a check at an edge: the per-turn subagent cap, an optional end-of-turn recap, and a fresh-context review you may ask for. These are the only things this plugin enforces.
-- The **interior** is how a turn actually runs: mandated process, forced delegation, per-turn posture injection, step-by-step instructions. baton ships these on purpose. oh-my-opus refuses to — Opus 5 decides how to work.
+- The **interior** is how a turn actually runs: mandated process, forced delegation, step-by-step instructions. baton ships these on purpose. oh-my-opus refuses to — Opus 5 decides how to work.
+
+The harness overlay is the one deliberate exception to that rule, and it is worth naming as one. It is a per-turn injection, which is an interior control. It exists only to offset interior controls a project already imposes, and it is off unless the project opts in.
 
 If baton is a harness, oh-my-opus is a guardrail on the edge of the road. They are siblings that take opposite approaches; pick the one that matches how much you want to steer.
 
@@ -19,10 +21,11 @@ Three workers, all **available by choice and never required**:
 - `coder` — Sonnet 5, implements a handed stage against clear acceptance criteria.
 - `reviewer` — Opus 5, read-only adversarial review of a final diff. Pinned to the session's own model on purpose: the value is a fresh context that did not produce the change, not a stronger model.
 
-Two mechanisms:
+Three mechanisms:
 
 - **Subagent cap** — a per-turn limit on how many subagents the main agent may spawn. `auto` is 10 under an Opus 5 session and unlimited otherwise; `0` is unlimited; `1`-`99` is a hard cap. The counter resets on every user prompt.
 - **Recap** — an optional short recap when a turn ends long, at the cost of one extra model call on those turns. It fires only in an Opus 5 session and only when the ending message exceeds the threshold. `on` (the default) uses 1200 characters; `off` disables it; an integer `1`-`99999` sets a custom threshold. The threshold counts characters, not bytes.
+- **Harness overlay** — tells an Opus 5 session to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist. See [The overlay](#the-overlay). Opt-in per project; off everywhere else.
 
 ## Install
 
@@ -31,17 +34,39 @@ Two mechanisms:
 /plugin install oh-my-opus@oh-my-opus
 ```
 
-Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert until you turn it on** — no flag file means no cap, no recap, nothing written. It also needs an interactive session, and it only ever acts under Opus 5.
+Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert until you turn it on** — no flag file means no cap, no recap, no overlay, nothing written. It also needs an interactive session, and it only ever acts under Opus 5.
 
 ## Usage
 
 Run `/oh-my-opus`:
 
-- `on [maxagents=auto|0-99] [recap=on|off|<chars>]` — turn on (defaults `maxagents=auto`, `recap=on`).
+- `on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off]` — turn on (defaults `maxagents=auto`, `recap=on`, `overlay=on`).
 - `off` — turn off; the plugin goes inert.
-- `maxagents auto|0-99` — change the cap, keep the recap setting.
-- `recap on|off|<chars>` — change the recap setting, keep the cap.
-- `status` — report both current values.
+- `maxagents auto|0-99` — change the cap, keep the rest.
+- `recap on|off|<chars>` — change the recap setting, keep the rest.
+- `overlay on|off` — the global kill switch for the overlay; per-project opt-in is separate, below.
+- `status` — report all three values, and whether this project carries the overlay marker.
+
+## The overlay
+
+Most project harnesses were written for models that needed the scaffolding: do these steps in this order, delegate this stage, run this review ritual, answer in this shape. That scaffolding made weaker models reliable. On Opus 5 it mostly gets in the way, and you cannot always force a session onto a particular model, so deleting the scaffolding is not an option either.
+
+The overlay resolves that by changing how the rules are read rather than whether they exist:
+
+- **Method becomes advisory** — step order, mandatory delegation or subagent use, review rituals, format and length conventions. The session follows its own judgment where that serves the task better.
+- **Substance still binds** — paths you must not touch, commands you must run before finishing, acceptance criteria, security and compliance rules, and anything you said in the conversation.
+- **Tool permissions and hook decisions are never advisory.** This plugin does not read, alter, or override them. If something is blocked, it stays blocked.
+- **Departures are visible.** When the session deliberately sets a rule aside it says so in one line, so you can see what it did rather than discovering it later.
+
+### Turning it on for a project
+
+```sh
+touch .claude/oh-my-opus
+```
+
+That marker is the opt-in, and any parent directory of the session cwd counts. Three gates must all pass before a single word is injected: the session model is Opus 5, the global flag does not say `overlay=off`, and the marker exists. Without the marker nothing happens — which is the point. A plugin that silently rewrote how every repository's rules are read, including repositories whose rules are not yours to reinterpret, would be a worse thing than the problem it solves.
+
+Commit the marker if the team agrees the project's method rules are legacy scaffolding. Leave it untracked if that is your call alone.
 
 State lives in `~/.claude/oh-my-opus` (flag file) and `~/.claude/oh-my-opus-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start. Headless `claude -p` runs carry no `model` field at `SessionStart` — only interactive sessions do — so in headless mode the plugin stays inert by design rather than guessing.
 
