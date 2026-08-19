@@ -6,8 +6,10 @@
 # The overlay is the one place this plugin speaks into the interior of a turn,
 # and it does so only to offset instructions that are already there. Three
 # gates guard it, and all three must pass:
-#   - the session model is Opus 5 (you cannot always force a session onto it,
-#     and under any other model the project's own harness must stand as written)
+#   - the session model is a frontier model, Opus 5 or Fable 5 (the argument for
+#     demoting legacy scaffolding is about capability, not about one model id,
+#     and you cannot always force a session onto the model you wanted; under
+#     anything else the project's own harness must stand as written)
 #   - the project opted in with a .claude/oh-my-opus marker file
 #   - the global flag does not carry overlay=off
 #
@@ -48,17 +50,19 @@ while [ -n "$d" ] && [ "$d" != "/" ]; do
 done
 [ -n "$marker" ] || exit 0
 
-# Gate 3: the session model.
+# Gate 3: the session model. Frontier only — and note this is a different
+# predicate from the recap's, which stays Opus-5-only because Fable's turns are
+# already short enough that a recap would not earn its extra call.
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # `.` is a POSIX special builtin: a failed source aborts the shell before any
 # fallback runs, so pre-check readability.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
 tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
-omo_is_opus5_session "$tp" 2>/dev/null || exit 0
+omo_is_frontier_session "$tp" 2>/dev/null || exit 0
 
 OVERLAY=$(cat <<'TXT'
-You are Opus 5. This project's CLAUDE.md, skills, and workflow rules were written for earlier models. Treat them as context, not as a checklist.
+This project's CLAUDE.md, skills, and workflow rules were written for earlier models than the one running this session. Treat them as context, not as a checklist.
 
 Method is advisory: step order, mandatory delegation or subagent use, review rituals, and format or length conventions. Where your own judgment serves the task better, follow your judgment instead, and say so in one line when you do.
 

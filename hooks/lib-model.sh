@@ -31,27 +31,48 @@ omo_normalize_model() {
   printf '%s' "$_bnm_nobracket" | sed 's/-[0-9]\{8\}$//'
 }
 
-# Return 0 iff any normalization candidate is exactly `claude-opus-5`. Bare
-# aliases (opus, opusplan, default) deliberately do not match.
-omo_is_opus5() {
+# Return 0 iff any normalization candidate of $1 is exactly one of the model
+# ids given in the remaining arguments. Bare aliases (opus, opusplan, fable,
+# default) deliberately do not match.
+omo_model_is() {
+  _bmi_model=$1
+  shift
   # Split the candidate list on newlines only and disable pathname expansion, so
   # a model id like `*` is never glob-expanded against the caller's CWD. This is
   # a sourced library, so restore IFS and the -f state to whatever they were.
-  _bio_ifs=$IFS
-  case $- in *f*) _bio_hadf=1 ;; *) _bio_hadf=0 ;; esac
+  _bmi_ifs=$IFS
+  case $- in *f*) _bmi_hadf=1 ;; *) _bmi_hadf=0 ;; esac
   IFS='
 '
   set -f
-  _bio_ret=1
-  for _bio_c in $(omo_model_candidates "$1"); do
-    if [ "$_bio_c" = "claude-opus-5" ]; then
-      _bio_ret=0
-      break
-    fi
+  _bmi_ret=1
+  for _bmi_c in $(omo_model_candidates "$_bmi_model"); do
+    for _bmi_t in "$@"; do
+      if [ "$_bmi_c" = "$_bmi_t" ]; then
+        _bmi_ret=0
+        break 2
+      fi
+    done
   done
-  IFS=$_bio_ifs
-  [ "$_bio_hadf" = "1" ] || set +f
-  return "$_bio_ret"
+  IFS=$_bmi_ifs
+  [ "$_bmi_hadf" = "1" ] || set +f
+  return "$_bmi_ret"
+}
+
+# Return 0 iff the model is Opus 5.
+omo_is_opus5() {
+  omo_model_is "$1" claude-opus-5
+}
+
+# Return 0 iff the model is one this plugin treats as frontier: Opus 5 or
+# Fable 5. Only the overlay uses this. The overlay's argument — that a
+# project's legacy method scaffolding gets in the way rather than helping — is
+# about model capability, not about one model id, so it holds for Fable 5 too.
+# The recap deliberately does NOT use this predicate: measured over 61 Fable
+# turns the median ending message was 187 characters and only 11.5% cleared
+# 1200, so a recap there would mostly be an extra call that buys nothing.
+omo_is_frontier() {
+  omo_model_is "$1" claude-opus-5 claude-fable-5
 }
 
 # Echo the model of the most recent MAIN-CHAIN assistant entry in a transcript,
@@ -81,6 +102,13 @@ omo_is_opus5_session() {
   omo_is_opus5 "$_ios_m"
 }
 
+# Return 0 iff the transcript's current model is a frontier model (Opus 5 or
+# Fable 5). Same unknown-model behaviour as omo_is_opus5_session.
+omo_is_frontier_session() {
+  _ifr_m=$(omo_session_model "$1") || return 1
+  omo_is_frontier "$_ifr_m"
+}
+
 # Echo the effective per-turn subagent cap for a transcript path, or nothing
 # when unlimited. Resolution:
 #   maxagents=0            -> unlimited (nothing)
@@ -88,6 +116,10 @@ omo_is_opus5_session() {
 #   maxagents=auto/missing -> cap 10 iff the session model is Opus 5, else
 #                             unlimited; an unresolvable model fails OPEN
 #   any other value        -> unlimited
+# `auto` stays Opus-5-only on purpose, unlike the overlay's frontier gate. It is
+# insurance against a fan-out that has not been observed, so it stays scoped to
+# the session this plugin was built for; a Fable session that wants a ceiling
+# can set an explicit maxagents=<n>, which applies regardless of model.
 omo_effective_cap() {
   _bec_tp=$1
   _bec_flag="${HOME}/.claude/oh-my-opus"

@@ -1,5 +1,5 @@
 {
-  "description": "oh-my-opus: bound an Opus 5 session at its edges — a per-turn subagent cap, per-turn counter reset, and an end-of-turn recap when a turn ends long — without steering how the session works. Missing flag file leaves the plugin inert.",
+  "description": "oh-my-opus: bound an Opus 5 session at its edges — a per-turn subagent cap, per-turn counter reset, and an end-of-turn recap when a turn ends long — without steering how the session works. The opt-in harness overlay also covers a Fable 5 session; the cap and recap are Opus 5 only. Missing flag file leaves the plugin inert.",
   "hooks": {
     "UserPromptSubmit": [
       {
