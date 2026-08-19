@@ -10,7 +10,7 @@
       "name": "oh-my-opus",
       "source": "./",
       "license": "MIT",
-      "description": "Bound an Opus 5 session at its edges without steering how it works: a per-turn subagent cap and an optional end-of-turn recap constrain the boundary, while cheap workers (Haiku scout, Sonnet coder, fresh-context Opus 5 reviewer, Fable 5 advisor) stay available by choice and never required. The deliberate inverse of baton — constrain the boundary, never the interior."
+      "description": "Bound an Opus 5 session at its edges without steering how it works: a per-turn subagent cap and an optional end-of-turn recap constrain the boundary, while cheap workers (Haiku scout, Sonnet coder, fresh-context Opus 4.8 reviewer, Fable 5 advisor) stay available by choice and never required. The deliberate inverse of baton — constrain the boundary, never the interior."
     }
   ]
 }
