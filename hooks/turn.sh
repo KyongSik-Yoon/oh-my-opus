@@ -37,13 +37,21 @@ ov=$(sed -n 's/^overlay=//p' "$FLAG" 2>/dev/null | tail -1)
 
 # Gate 2: project opt-in. Walk up from the session cwd looking for the marker
 # .claude/oh-my-opus. Nothing is injected in a project that never asked.
+#
+# The walk passes through $HOME on its way to /, and the flag file sits at
+# exactly the path a marker would occupy there. Skipping that one candidate is
+# what keeps `on` from opting in every project under $HOME at once; it also
+# means $HOME itself cannot be opted in as a project, which is the trade the
+# shared filename forces.
 cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
 [ -n "$cwd" ] || exit 0
+flag_path="${HOME%/}/.claude/oh-my-opus"
 d=$cwd
 marker=""
 while [ -n "$d" ] && [ "$d" != "/" ]; do
-  if [ -f "${d}/.claude/oh-my-opus" ]; then
-    marker="${d}/.claude/oh-my-opus"
+  cand="${d}/.claude/oh-my-opus"
+  if [ -f "$cand" ] && [ "$cand" != "$flag_path" ]; then
+    marker="$cand"
     break
   fi
   d=$(dirname "$d")

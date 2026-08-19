@@ -69,7 +69,7 @@ The overlay resolves that by changing how the rules are read rather than whether
 touch .claude/oh-my-opus
 ```
 
-That marker is the opt-in, and any parent directory of the session cwd counts. Three gates must all pass before a single word is injected: the session model is Opus 5 or Fable 5, the global flag does not say `overlay=off`, and the marker exists. Without the marker nothing happens — which is the point. A plugin that silently rewrote how every repository's rules are read, including repositories whose rules are not yours to reinterpret, would be a worse thing than the problem it solves.
+That marker is the opt-in, and any parent directory of the session cwd counts — except `$HOME` itself, whose `.claude/oh-my-opus` is the global flag file and is never read as a project marker. Three gates must all pass before a single word is injected: the session model is Opus 5 or Fable 5, the global flag does not say `overlay=off`, and the marker exists. Without the marker nothing happens — which is the point. A plugin that silently rewrote how every repository's rules are read, including repositories whose rules are not yours to reinterpret, would be a worse thing than the problem it solves.
 
 Commit the marker if the team agrees the project's method rules are legacy scaffolding. Leave it untracked if that is your call alone.
 
