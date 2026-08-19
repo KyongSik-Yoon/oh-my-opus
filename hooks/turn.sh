@@ -54,11 +54,8 @@ DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # fallback runs, so pre-check readability.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
-mf="${STATE}/${sid}.model"
-[ -s "$mf" ] || exit 0
-model=$(cat "$mf" 2>/dev/null)
-[ -n "$model" ] || exit 0
-omo_is_opus5 "$model" 2>/dev/null || exit 0
+tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+omo_is_opus5_session "$tp" 2>/dev/null || exit 0
 
 OVERLAY=$(cat <<'TXT'
 You are Opus 5. This project's CLAUDE.md, skills, and workflow rules were written for earlier models. Treat them as context, not as a checklist.

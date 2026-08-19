@@ -34,7 +34,7 @@ Three mechanisms:
 /plugin install oh-my-opus@oh-my-opus
 ```
 
-Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert until you turn it on** — no flag file means no cap, no recap, no overlay, nothing written. It also needs an interactive session, and it only ever acts under Opus 5.
+Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert until you turn it on** — no flag file means no cap, no recap, no overlay, nothing written. It only ever acts under Opus 5.
 
 ## Usage
 
@@ -68,7 +68,13 @@ That marker is the opt-in, and any parent directory of the session cwd counts. T
 
 Commit the marker if the team agrees the project's method rules are legacy scaffolding. Leave it untracked if that is your call alone.
 
-State lives in `~/.claude/oh-my-opus` (flag file) and `~/.claude/oh-my-opus-state/` (per-session model capture and per-turn slot dirs, pruned after 7 days). `session-state.sh` only records the model at `SessionStart`, so turning the plugin on mid-session leaves both the cap and the recap inactive until the next session start. Headless `claude -p` runs carry no `model` field at `SessionStart` — only interactive sessions do — so in headless mode the plugin stays inert by design rather than guessing.
+State lives in `~/.claude/oh-my-opus` (the flag file) and `~/.claude/oh-my-opus-state/` (per-turn subagent slot directories, pruned after 7 days). Nothing about the session itself is cached, so turning the plugin on mid-session works immediately.
+
+### How it knows the session is Opus 5
+
+Not from the `SessionStart` payload. That payload carries a `model` field only sometimes: a headless `claude -p` run has none, and an interactive session started without an explicit `--model` was observed to have none either, which left the plugin silently inert in exactly the sessions it was meant for.
+
+Instead every hook reads the model out of the transcript. Every hook payload carries `transcript_path`, and every assistant entry in that JSONL records the model that produced it. That works however the session was launched, follows a mid-session `/model` switch, and costs about 17 ms on a 2 MB transcript because the tail is scanned first. Two details matter: sidechain entries are skipped, since a Sonnet subagent's turn would otherwise mask an Opus 5 session; and before the first assistant reply the model is simply unknown, so everything fails open.
 
 ## Where the numbers come from
 

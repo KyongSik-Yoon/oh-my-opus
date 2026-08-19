@@ -26,7 +26,7 @@ Handle the argument first, confirm in one line, then stop.
 
 ## Cap semantics
 
-`auto` means a cap of 10 under an Opus 5 session and unlimited otherwise. `0` is unlimited. `1`-`99` is a hard cap regardless of model. The per-turn counter resets on every user prompt. The session model is recorded at `SessionStart`, because later hook payloads do not carry a model field — that is why the cap knows whether the session is Opus 5. Only interactive sessions carry it; a headless `claude -p` run leaves the plugin inert.
+`auto` means a cap of 10 under an Opus 5 session and unlimited otherwise. `0` is unlimited. `1`-`99` is a hard cap regardless of model. The per-turn counter resets on every user prompt. How the cap knows the session is Opus 5: every hook payload carries `transcript_path`, and every assistant entry in that transcript records the model that produced it, so the hooks read the model there. Subagent (sidechain) entries are skipped, or a Sonnet worker could mask the session. Before the first assistant reply the model is unknown and the cap fails open.
 
 ## Recap semantics
 

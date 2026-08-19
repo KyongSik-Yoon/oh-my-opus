@@ -30,7 +30,8 @@ DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # is undefined below and the [ -n "$cap" ] guard fails OPEN (allow) — safe.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
-cap=$(omo_effective_cap "$sid" 2>/dev/null)
+tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+cap=$(omo_effective_cap "$tp" 2>/dev/null)
 [ -n "$cap" ] || exit 0
 
 STATE="${HOME}/.claude/oh-my-opus-state"

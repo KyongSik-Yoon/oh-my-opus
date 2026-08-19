@@ -46,12 +46,8 @@ DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 # direction here is to never spend an extra call on a session we cannot identify.
 [ -r "$DIR/lib-model.sh" ] && . "$DIR/lib-model.sh"
 
-STATE="${HOME}/.claude/oh-my-opus-state"
-mf="${STATE}/${sid}.model"
-[ -s "$mf" ] || exit 0
-model=$(cat "$mf" 2>/dev/null)
-[ -n "$model" ] || exit 0
-omo_is_opus5 "$model" 2>/dev/null || exit 0
+tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+omo_is_opus5_session "$tp" 2>/dev/null || exit 0
 
 # Measure the ending message. jq's `length` on a string counts codepoints, not
 # bytes — correct for non-ASCII text. last_assistant_message is ONLY measured
