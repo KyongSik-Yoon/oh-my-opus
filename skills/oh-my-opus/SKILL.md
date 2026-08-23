@@ -4,7 +4,7 @@ argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off
 description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an end-of-turn recap, cheap workers it may call by choice, a fresh-context reviewer, and an opt-in overlay that demotes a project's legacy method instructions to advice. Invoke only when the user runs /oh-my-opus or asks about the mode; never implicitly.
 ---
 
-Opus 5 decides how to work. This plugin does not tell it. The rule is: **constrain the boundary, never the interior.** A boundary is a budget or a check at an edge — the subagent cap and the recap. The interior is how a turn actually runs: mandated process, forced delegation, step-by-step ritual.
+Opus 5 decides how to work. This plugin does not tell it. The rule is: **constrain the boundary, never the interior.** A boundary is a budget or a check at an edge — the subagent cap and the recap. The interior is how a turn actually runs: mandated process, forced delegation, step-by-step procedure.
 
 The overlay is the one deliberate exception, and it is an exception on purpose. It is a per-turn injection, which is an interior control — but it exists only to offset interior controls a project already imposes, and it stays silent unless that project opts in. It is also the one mechanism that is not Opus-5-only; it applies to a Fable 5 session too.
 
@@ -36,7 +36,7 @@ Handle the argument first, confirm in one line, then stop.
 
 ## Overlay semantics
 
-Project harnesses were mostly written for models that needed the scaffolding. The overlay tells a frontier session to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist: **method** becomes advisory (step order, mandatory delegation, review rituals, format conventions) while **substance** still binds (paths not to touch, commands to run before finishing, acceptance criteria, security and compliance). Tool permissions and hook decisions are never advisory and this plugin does not touch them. When the session sets a rule aside deliberately it says so in one line, so the departure stays visible.
+Project harnesses were mostly written for models that needed the scaffolding. The overlay tells a frontier session to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist: **method** becomes advisory (step order, mandatory delegation, required review passes, format conventions) while **substance** still binds (paths not to touch, commands to run before finishing, acceptance criteria, security and compliance). Tool permissions and hook decisions are never advisory and this plugin does not touch them. When the session sets a rule aside deliberately it says so in one line, so the departure stays visible.
 
 Three gates all have to pass, so it is quiet by default: the session model is **Opus 5 or Fable 5**, the flag does not say `overlay=off`, and **the project opted in** by creating a marker file `.claude/oh-my-opus` in the repo (any parent directory of the session cwd counts, except `$HOME` itself — the file there is the global flag, not a marker, so opting in the plugin never opts in every project under `$HOME`). Without that marker nothing is injected — which is what keeps the plugin from silently rewriting the rules of a repository that never asked.
 

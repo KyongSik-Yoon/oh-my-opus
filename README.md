@@ -2,18 +2,15 @@
 
 Bound an Opus 5 session at its edges without steering how it works.
 
-## Premise
+Three mechanisms and four optional workers. Nothing here tells the session *how* to run a task — the defaults were measured against real transcripts, not chosen by feel ([the numbers](#where-the-numbers-come-from)), and the reasoning behind the shape is in [design notes](#design-notes) at the end.
 
-oh-my-opus is the deliberate inverse of [baton](https://github.com/KyongSik-Yoon/baton). baton runs the session as a hook-enforced pure orchestrator: it blocks the main agent's edits and forces delegation. This plugin does the opposite. It constrains **the boundary, never the interior.**
+## What it does
 
-- A **boundary** is a budget or a check at an edge: the per-turn subagent cap, an optional end-of-turn recap, and a fresh-context review you may ask for. These are the only things this plugin enforces.
-- The **interior** is how a turn actually runs: mandated process, forced delegation, step-by-step instructions. baton ships these on purpose. oh-my-opus refuses to — Opus 5 decides how to work.
+Three mechanisms:
 
-The harness overlay is the one deliberate exception to that rule, and it is worth naming as one. It is a per-turn injection, which is an interior control. It exists only to offset interior controls a project already imposes, and it is off unless the project opts in.
-
-If baton is a harness, oh-my-opus is a guardrail on the edge of the road. They are siblings that take opposite approaches; pick the one that matches how much you want to steer.
-
-## What ships
+- **Subagent cap** — a per-turn limit on how many subagents the main agent may spawn. `auto` is 10 under an Opus 5 session and unlimited otherwise; `0` is unlimited; `1`-`99` is a hard cap. The counter resets on every user prompt.
+- **Recap** — an optional short recap when a turn ends long, at the cost of one extra model call on those turns. It fires only in an Opus 5 session and only when the ending message exceeds the threshold. `on` (the default) uses 1200 characters; `off` disables it; an integer `1`-`99999` sets a custom threshold. The threshold counts characters, not bytes.
+- **Harness overlay** — tells a frontier session (Opus 5 or Fable 5) to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist. See [The overlay](#the-overlay). Opt-in per project; off everywhere else.
 
 Four workers, all **available by choice and never required**:
 
@@ -23,12 +20,6 @@ Four workers, all **available by choice and never required**:
 - `advisor` — Fable 5, one independent judgment on a question. Where the reviewer is a prior Opus with a fresh context, the advisor is a *different model family* with a fresh context, so the two miss different things.
 
 The advisor has **no trigger**. Nothing in this plugin decides when to consult it, on purpose: a mandatory escalation gate is an interior control, and a second voice arriving after a direction is already chosen is a good way to manufacture the churn this plugin exists to avoid. The cheap moment for a second opinion is *before* you commit — a design you are about to build on, a decision you have already reversed once, evidence that will not reconcile. The session judges that moment itself, as it does with the other three.
-
-Three mechanisms:
-
-- **Subagent cap** — a per-turn limit on how many subagents the main agent may spawn. `auto` is 10 under an Opus 5 session and unlimited otherwise; `0` is unlimited; `1`-`99` is a hard cap. The counter resets on every user prompt.
-- **Recap** — an optional short recap when a turn ends long, at the cost of one extra model call on those turns. It fires only in an Opus 5 session and only when the ending message exceeds the threshold. `on` (the default) uses 1200 characters; `off` disables it; an integer `1`-`99999` sets a custom threshold. The threshold counts characters, not bytes.
-- **Harness overlay** — tells a frontier session (Opus 5 or Fable 5) to read a project's `CLAUDE.md`, skills, and workflow rules as context rather than a checklist. See [The overlay](#the-overlay). Opt-in per project; off everywhere else.
 
 ## Install
 
@@ -50,36 +41,7 @@ Run `/oh-my-opus`:
 - `overlay on|off` — the global kill switch for the overlay; per-project opt-in is separate, below.
 - `status` — report all three values, and whether this project carries the overlay marker.
 
-## The overlay
-
-Most project harnesses were written for models that needed the scaffolding: do these steps in this order, delegate this stage, run this review ritual, answer in this shape. That scaffolding made weaker models reliable. On a current frontier model it mostly gets in the way, and you cannot always force a session onto a particular model, so deleting the scaffolding is not an option either.
-
-That last point is also why the overlay is the one mechanism here that is not Opus-5-only. Its argument is about capability, not about a model id, so it applies to a Fable 5 session too — and a session you did not get to choose is exactly the one that most needs it. The other two mechanisms stay Opus-5-only: `auto` caps only an Opus 5 session, and the recap fires only there, because Fable's turns are already short enough (see below) that the extra call would buy nothing.
-
-The overlay resolves that by changing how the rules are read rather than whether they exist:
-
-- **Method becomes advisory** — step order, mandatory delegation or subagent use, review rituals, format and length conventions. The session follows its own judgment where that serves the task better.
-- **Substance still binds** — paths you must not touch, commands you must run before finishing, acceptance criteria, security and compliance rules, and anything you said in the conversation.
-- **Tool permissions and hook decisions are never advisory.** This plugin does not read, alter, or override them. If something is blocked, it stays blocked.
-- **Departures are visible.** When the session deliberately sets a rule aside it says so in one line, so you can see what it did rather than discovering it later.
-
-### Turning it on for a project
-
-```sh
-touch .claude/oh-my-opus
-```
-
-That marker is the opt-in, and any parent directory of the session cwd counts — except `$HOME` itself, whose `.claude/oh-my-opus` is the global flag file and is never read as a project marker. Three gates must all pass before a single word is injected: the session model is Opus 5 or Fable 5, the global flag does not say `overlay=off`, and the marker exists. Without the marker nothing happens — which is the point. A plugin that silently rewrote how every repository's rules are read, including repositories whose rules are not yours to reinterpret, would be a worse thing than the problem it solves.
-
-Commit the marker if the team agrees the project's method rules are legacy scaffolding. Leave it untracked if that is your call alone.
-
 State lives in `~/.claude/oh-my-opus` (the flag file) and `~/.claude/oh-my-opus-state/` (per-turn subagent slot directories, pruned after 7 days). Nothing about the session itself is cached, so turning the plugin on mid-session works immediately.
-
-### How it knows the session is Opus 5
-
-Not from the `SessionStart` payload. That payload carries a `model` field only sometimes: a headless `claude -p` run has none, and an interactive session started without an explicit `--model` was observed to have none either, which left the plugin silently inert in exactly the sessions it was meant for.
-
-Instead every hook reads the model out of the transcript. Every hook payload carries `transcript_path`, and every assistant entry in that JSONL records the model that produced it. That works however the session was launched, follows a mid-session `/model` switch, and costs about 17 ms on a 2 MB transcript because the tail is scanned first. Two details matter: sidechain entries are skipped, since a Sonnet subagent's turn would otherwise mask an Opus 5 session; and before the first assistant reply the model is simply unknown, so everything fails open.
 
 ## Where the numbers come from
 
@@ -114,9 +76,45 @@ awk -F'\t' '{n++; s+=$5; if($3>m) m=$3; a[n]=$3}
 
 If it almost never fires, your own output style or system prompt is already doing the work and you can set `recap=off` — the hook is not earning its extra call. If it fires on most turns, lower the threshold or fix the upstream instruction instead of paying for a recap every turn. The recap is a backstop for a standing instruction that decays; its firing rate is the measurement of that decay.
 
-## Why this exists
+## The overlay
 
-Heavy orchestration harnesses can fight a capable model as much as they help it. oh-my-opus is the experiment in the other direction: give the session cheap tools and a hard budget at the edges, then get out of its way. It is a sibling of https://github.com/KyongSik-Yoon/baton, which takes the opposite approach on purpose.
+Most project harnesses were written for models that needed the scaffolding: do these steps in this order, delegate this stage, run this review pass, answer in this shape. That scaffolding made weaker models reliable. On a current frontier model it mostly gets in the way, and you cannot always force a session onto a particular model, so deleting the scaffolding is not an option either.
+
+That last point is also why the overlay is the one mechanism here that is not Opus-5-only. Its argument is about capability, not about a model id, so it applies to a Fable 5 session too — and a session you did not get to choose is exactly the one that most needs it. The other two mechanisms stay Opus-5-only: `auto` caps only an Opus 5 session, and the recap fires only there, because Fable's turns are already short enough (see above) that the extra call would buy nothing.
+
+The overlay resolves that by changing how the rules are read rather than whether they exist:
+
+- **Method becomes advisory** — step order, mandatory delegation or subagent use, required review passes, format and length conventions. The session follows its own judgment where that serves the task better.
+- **Substance still binds** — paths you must not touch, commands you must run before finishing, acceptance criteria, security and compliance rules, and anything you said in the conversation.
+- **Tool permissions and hook decisions are never advisory.** This plugin does not read, alter, or override them. If something is blocked, it stays blocked.
+- **Departures are visible.** When the session deliberately sets a rule aside it says so in one line, so you can see what it did rather than discovering it later.
+
+### Turning it on for a project
+
+```sh
+touch .claude/oh-my-opus
+```
+
+That marker is the opt-in, and any parent directory of the session cwd counts — except `$HOME` itself, whose `.claude/oh-my-opus` is the global flag file and is never read as a project marker. Three gates must all pass before a single word is injected: the session model is Opus 5 or Fable 5, the global flag does not say `overlay=off`, and the marker exists. Without the marker nothing happens — which is the point. A plugin that silently rewrote how every repository's rules are read, including repositories whose rules are not yours to reinterpret, would be a worse thing than the problem it solves.
+
+Commit the marker if the team agrees the project's method rules are legacy scaffolding. Leave it untracked if that is your call alone.
+
+## Design notes
+
+The rule the whole plugin follows is: constrain **the boundary, never the interior.**
+
+- A **boundary** is a budget or a check at an edge: the per-turn subagent cap, an optional end-of-turn recap, and a fresh-context review you may ask for. These are the only things this plugin enforces.
+- The **interior** is how a turn actually runs: mandated process, forced delegation, step-by-step instructions. oh-my-opus refuses to ship these — Opus 5 decides how to work.
+
+The overlay is the one deliberate exception to that rule, and it is worth naming as one. It is a per-turn injection, which is an interior control. It exists only to offset interior controls a project already imposes, and it is off unless the project opts in.
+
+This is the deliberate inverse of [baton](https://github.com/KyongSik-Yoon/baton), which runs the session as a hook-enforced pure orchestrator: it blocks the main agent's edits and forces delegation. Heavy orchestration harnesses like that can fight a capable model as much as they help it. oh-my-opus is the experiment in the other direction: give the session cheap tools and a hard budget at the edges, then get out of its way. If baton is a harness, oh-my-opus is a guardrail on the edge of the road. They are siblings that take opposite approaches; pick the one that matches how much you want to steer.
+
+### How it knows the session is Opus 5
+
+Not from the `SessionStart` payload. That payload carries a `model` field only sometimes: a headless `claude -p` run has none, and an interactive session started without an explicit `--model` was observed to have none either, which left the plugin silently inert in exactly the sessions it was meant for.
+
+Instead every hook reads the model out of the transcript. Every hook payload carries `transcript_path`, and every assistant entry in that JSONL records the model that produced it. That works however the session was launched, follows a mid-session `/model` switch, and costs about 17 ms on a 2 MB transcript because the tail is scanned first. Two details matter: sidechain entries are skipped, since a Sonnet subagent's turn would otherwise mask an Opus 5 session; and before the first assistant reply the model is simply unknown, so everything fails open.
 
 ## License
 

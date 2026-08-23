@@ -72,7 +72,7 @@ omo_is_frontier_session "$tp" 2>/dev/null || exit 0
 OVERLAY=$(cat <<'TXT'
 This project's CLAUDE.md, skills, and workflow rules were written for earlier models than the one running this session. Treat them as context, not as a checklist.
 
-Method is advisory: step order, mandatory delegation or subagent use, review rituals, and format or length conventions. Where your own judgment serves the task better, follow your judgment instead, and say so in one line when you do.
+Method is advisory: step order, mandatory delegation or subagent use, required review passes, and format or length conventions. Where your own judgment serves the task better, follow your judgment instead, and say so in one line when you do.
 
 Substance still binds: paths you must not touch, commands you must run before finishing, acceptance criteria, security and compliance rules, and anything the user has said in this conversation. Tool permissions and hook decisions are never advisory.
 
