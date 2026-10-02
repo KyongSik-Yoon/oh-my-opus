@@ -1,6 +1,6 @@
 ---
 name: oh-my-opus
-argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off] | off | maxagents auto|0-99 | recap on|off|<chars> | overlay on|off | status]"
+argument-hint: "[on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off] [reviewer=default|fable|opus5] | off | maxagents auto|0-99 | recap on|off|<chars> | overlay on|off | reviewer default|fable|opus5 | status]"
 description: Bound an Opus 5 session at its edges without steering how it works — a per-turn subagent cap, an end-of-turn recap, cheap workers it may call by choice, a fresh-context reviewer, and an opt-in overlay that demotes a project's legacy method instructions to advice. Invoke only when the user runs /oh-my-opus or asks about the mode; never implicitly.
 ---
 
@@ -10,7 +10,7 @@ The overlay is the one deliberate exception, and it is an exception on purpose. 
 
 ## What ships
 
-Four workers, all available and never required: `scout` (Haiku, read-only recon), `coder` (Sonnet 5, implements a handed stage), `reviewer` (Opus 4.8, fresh-context adversarial review of a final diff), `advisor` (Fable 5, one independent judgment on a question). The session calls them if and when it judges they help.
+Four workers, all available and never required: `scout` (Haiku, read-only recon), `coder` (Sonnet 5, implements a handed stage), `reviewer` (Opus 4.8, fresh-context adversarial review of a final diff; pinned variants `reviewer-fable` on Fable 5 and `reviewer-opus5` on Opus 5.5 do the same job), `advisor` (Fable 5, one independent judgment on a question). The session calls them if and when it judges they help.
 
 The advisor is a different model family with a fresh context where the reviewer is a prior Opus generation with a fresh context — neither one wrote the change, and they miss different things. It has no trigger and this plugin never mandates one — a second opinion is cheap before a direction is committed to and expensive after, and the session is the thing that knows which it is looking at.
 
@@ -20,11 +20,11 @@ Three mechanisms: a per-turn **cap** on subagent spawns, an end-of-turn **recap*
 
 Handle the argument first, confirm in one line, then stop.
 
-- `on [maxagents=<v>] [recap=<v>] [overlay=<v>]` — write the flag file, defaults `maxagents=auto`, `recap=on`, `overlay=on`:
-  `printf 'maxagents=<m>\nrecap=<r>\noverlay=<o>\n' > ~/.claude/oh-my-opus`
+- `on [maxagents=<v>] [recap=<v>] [overlay=<v>] [reviewer=<v>]` — write the flag file, defaults `maxagents=auto`, `recap=on`, `overlay=on`, `reviewer=default`:
+  `printf 'maxagents=<m>\nrecap=<r>\noverlay=<o>\nreviewer=<v>\n' > ~/.claude/oh-my-opus`
 - `off` — `rm -f ~/.claude/oh-my-opus` (plugin goes inert).
-- `maxagents auto|0-99` / `recap on|off|<chars>` / `overlay on|off` — rewrite only that line, keep the others.
-- `status` — report all three values, and whether the current project carries the overlay marker.
+- `maxagents auto|0-99` / `recap on|off|<chars>` / `overlay on|off` / `reviewer default|fable|opus5` — rewrite only that line (add it if missing), keep the others.
+- `status` — report all four values, and whether the current project carries the overlay marker.
 
 ## Cap semantics
 
@@ -33,6 +33,10 @@ Handle the argument first, confirm in one line, then stop.
 ## Recap semantics
 
 `recap=on` (the default) fires when the ending message exceeds **1200 characters**; `off` disables it; an integer `1`-`99999` sets a custom threshold. It counts characters (codepoints), not bytes, and costs one extra model call on the turns it fires. It fires in an Opus 5 session only — unlike the overlay, it does not extend to Fable 5, whose turns are already short enough that the extra call would not earn itself.
+
+## Reviewer pin
+
+`reviewer=fable` or `opus5` redirects every spawn of `oh-my-opus:reviewer` to `reviewer-fable` (Fable 5) or `reviewer-opus5` (Opus 5.5) in the `PreToolUse` hook; `default` leaves the Opus 4.8 reviewer in place. A variant named explicitly is never redirected. Like the rest of the plugin it needs the flag file: when the plugin is off, `reviewer` is Opus 4.8.
 
 ## Overlay semantics
 

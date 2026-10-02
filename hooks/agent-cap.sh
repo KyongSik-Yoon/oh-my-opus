@@ -1,6 +1,10 @@
 #!/bin/sh
 # oh-my-opus agent cap: PreToolUse hook on Task|Agent. While the flag file
-# exists, cap how many subagents the MAIN agent may spawn in a single turn. Only
+# exists, it does two things. (1) Reviewer pin: with `reviewer=fable|opus5` in
+# the flag, a spawn of `oh-my-opus:reviewer` is redirected to the matching pinned
+# variant (`reviewer-fable` / `reviewer-opus5`); `default` or no line leaves it
+# alone, and a variant named explicitly is never touched. (2) Cap how many
+# subagents the MAIN agent may spawn in a single turn. Only
 # the main agent is capped (subagent spawns carry agent_id). The counter is reset
 # per turn by turn-reset.sh on UserPromptSubmit. Fails OPEN everywhere: a missing
 # flag, missing state, or bad session id never blocks a spawn.
@@ -15,16 +19,37 @@ case "$tool" in
   *) exit 0 ;;
 esac
 
+# Reviewer pin. `updatedInput` REPLACES the whole tool input (observed; not a
+# merge), so the full input is echoed back with only subagent_type changed —
+# sending just the one field drops prompt/description and the spawn fails.
+# Every allow path below goes through `allow`, so the redirect rides along with
+# whatever the cap decides; a deny never redirects.
+redirect=
+rv=$(sed -n 's/^reviewer=//p' "$FLAG" 2>/dev/null | tail -1)
+st=$(printf '%s' "$input" | jq -r '.tool_input.subagent_type // empty' 2>/dev/null)
+if [ "$st" = "oh-my-opus:reviewer" ]; then
+  case "$rv" in
+    fable|opus5)
+      redirect=$(printf '%s' "$input" | jq -c --arg t "oh-my-opus:reviewer-$rv" \
+        '{hookSpecificOutput:{hookEventName:"PreToolUse",updatedInput:(.tool_input + {subagent_type:$t})}}' 2>/dev/null)
+      ;;
+  esac
+fi
+allow() {
+  [ -z "$redirect" ] || printf '%s\n' "$redirect"
+  exit 0
+}
+
 # Only the main agent is capped; a subagent spawn carries a non-empty agent_id.
 agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null)
-[ -z "$agent_id" ] || exit 0
+[ -z "$agent_id" ] || allow
 
 sid=$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)
 case "$sid" in
-  '' | *[!A-Za-z0-9_-]* ) exit 0 ;;
+  '' | *[!A-Za-z0-9_-]* ) allow ;;
 esac
 
-DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || allow
 # `.` is a POSIX special builtin: a failed source aborts the shell before any
 # fallback runs, so pre-check readability. If the lib is gone, omo_effective_cap
 # is undefined below and the [ -n "$cap" ] guard fails OPEN (allow) — safe.
@@ -32,7 +57,7 @@ DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 0
 
 tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
 cap=$(omo_effective_cap "$tp" 2>/dev/null)
-[ -n "$cap" ] || exit 0
+[ -n "$cap" ] || allow
 
 STATE="${HOME}/.claude/oh-my-opus-state"
 slotdir="${STATE}/${sid}.agents"
@@ -44,12 +69,12 @@ slotdir="${STATE}/${sid}.agents"
 # exists, the cap is full for this turn -> deny. A denied spawn claims nothing,
 # so the count cannot drift. cap is at most 99, so the loop is bounded and cheap.
 # If the parent slot dir itself cannot be created, fail OPEN (allow), never deny.
-mkdir -p "$slotdir" 2>/dev/null || exit 0
+mkdir -p "$slotdir" 2>/dev/null || allow
 
 i=1
 while [ "$i" -le "$cap" ]; do
   if mkdir "${slotdir}/${i}" 2>/dev/null; then
-    exit 0  # claimed slot $i
+    allow  # claimed slot $i
   fi
   i=$((i + 1))
 done

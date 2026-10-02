@@ -8,3 +8,6 @@ __pycache__/
 *.pem
 *.p12
 *.pfx
+
+# graft index cache
+graft/.cache/

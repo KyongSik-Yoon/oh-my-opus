@@ -2,7 +2,7 @@
 
 Bound an Opus 5 session at its edges without steering how it works.
 
-Three mechanisms and four optional workers. Nothing here tells the session *how* to run a task — the defaults were measured against real transcripts, not chosen by feel ([the numbers](#where-the-numbers-come-from)), and the reasoning behind the shape is in [design notes](#design-notes) at the end.
+Three mechanisms and four optional workers (the reviewer in three pinned variants). Nothing here tells the session *how* to run a task — the defaults were measured against real transcripts, not chosen by feel ([the numbers](#where-the-numbers-come-from)), and the reasoning behind the shape is in [design notes](#design-notes) at the end.
 
 ## What it does
 
@@ -17,6 +17,7 @@ Four workers, all **available by choice and never required**:
 - `scout` — Haiku, read-only recon. Cheap file discovery and evidence gathering instead of the expensive built-in Explore.
 - `coder` — Sonnet 5, implements a handed stage against clear acceptance criteria.
 - `reviewer` — Opus 4.8, read-only adversarial review of a final diff. Pinned one generation back on purpose: the value is a fresh context that did not produce the change, on a model that did not write it and will not defer to it — not a stronger model.
+  - Pinned variants, same job: `reviewer-fable` (Fable 5 — a different family from the author, different blind spots) and `reviewer-opus5` (Opus 5.5 — strongest Opus, but the author's own blind spots). Each is a fixed pin; the session can name one, or `/oh-my-opus reviewer fable|opus5` makes a plain `reviewer` call land on it.
 - `advisor` — Fable 5, one independent judgment on a question. Where the reviewer is a prior Opus with a fresh context, the advisor is a *different model family* with a fresh context, so the two miss different things.
 
 The advisor has **no trigger**. Nothing in this plugin decides when to consult it, on purpose: a mandatory escalation gate is an interior control, and a second voice arriving after a direction is already chosen is a good way to manufacture the churn this plugin exists to avoid. The cheap moment for a second opinion is *before* you commit — a design you are about to build on, a decision you have already reversed once, evidence that will not reconcile. The session judges that moment itself, as it does with the other three.
@@ -34,12 +35,13 @@ Then `/oh-my-opus on`. Installing alone does nothing: the plugin is **inert unti
 
 Run `/oh-my-opus`:
 
-- `on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off]` — turn on (defaults `maxagents=auto`, `recap=on`, `overlay=on`).
+- `on [maxagents=auto|0-99] [recap=on|off|<chars>] [overlay=on|off] [reviewer=default|fable|opus5]` — turn on (defaults `maxagents=auto`, `recap=on`, `overlay=on`, `reviewer=default`).
 - `off` — turn off; the plugin goes inert.
 - `maxagents auto|0-99` — change the cap, keep the rest.
 - `recap on|off|<chars>` — change the recap setting, keep the rest.
+- `reviewer default|fable|opus5` — choose which pinned model a plain `reviewer` call runs on (Opus 4.8 / Fable 5 / Opus 5.5), keep the rest.
 - `overlay on|off` — the global kill switch for the overlay; per-project opt-in is separate, below.
-- `status` — report all three values, and whether this project carries the overlay marker.
+- `status` — report all four values, and whether this project carries the overlay marker.
 
 State lives in `~/.claude/oh-my-opus` (the flag file) and `~/.claude/oh-my-opus-state/` (per-turn subagent slot directories, pruned after 7 days). Nothing about the session itself is cached, so turning the plugin on mid-session works immediately.
 
